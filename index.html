@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Persetujuan Pengeluaran Kas</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1b2a41">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --ink:#1b2a41; --ink-soft:#4a5568; --line:#d8d3c8;
+    --paper:#f7f5f0; --card:#ffffff;
+    --ya:#2f6b4f; --tidak:#96331f; --tunda:#8a6410;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font:400 17px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  header{
+    background:var(--ink); color:#fff; padding:18px 20px;
+  }
+  header h1{
+    margin:0; font:500 19px/1.3 Georgia,"Times New Roman",serif; letter-spacing:.2px;
+  }
+  header p{margin:4px 0 0; font-size:13px; opacity:.75}
+  main{max-width:640px; margin:0 auto; padding:20px 16px 60px}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px; margin-bottom:18px; overflow-wrap:anywhere;
+  }
+  h2{font:500 20px/1.3 Georgia,serif; margin:0 0 4px}
+  .sub{color:var(--ink-soft); font-size:14px; margin:0 0 20px}
+  label{display:block; font-weight:500; font-size:15px; margin:16px 0 6px}
+  input,select,textarea{
+    width:100%; padding:12px 13px; font-size:17px; font-family:inherit;
+    border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink);
+  }
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--ink); outline-offset:1px}
+  textarea{min-height:88px; resize:vertical}
+  .hint{font-size:13px; color:var(--ink-soft); margin-top:5px}
+  button{
+    font:500 17px inherit; padding:14px 20px; border-radius:8px; border:1px solid transparent;
+    cursor:pointer; width:100%; margin-top:10px;
+  }
+  .b-utama{background:var(--ink); color:#fff}
+  .b-ya{background:var(--ya); color:#fff}
+  .b-tidak{background:#fff; color:var(--tidak); border-color:var(--tidak)}
+  button:disabled{opacity:.5; cursor:not-allowed}
+  dl{margin:0 0 18px; display:grid; grid-template-columns:auto 1fr; gap:9px 16px; font-size:15px}
+  dt{color:var(--ink-soft)}
+  dd{margin:0; font-weight:500; overflow-wrap:anywhere}
+  .nominal{font-size:26px; font-family:Georgia,serif}
+  .pill{
+    display:inline-block; padding:5px 11px; border-radius:99px; font-size:13px;
+    background:#eceae4; color:var(--ink-soft);
+  }
+  .pesan{padding:14px 16px; border-radius:8px; margin:16px 0; font-size:15px}
+  .pesan.ok{background:#e8f1eb; color:var(--ya)}
+  .pesan.galat{background:#f6e9e5; color:var(--tidak)}
+  .pesan.info{background:#f5eedd; color:var(--tunda)}
+  .radio-baris{display:flex; gap:10px; margin-top:8px}
+  .radio-baris label{
+    flex:1; margin:0; padding:13px; text-align:center; border:1px solid var(--line);
+    border-radius:8px; cursor:pointer; font-weight:400;
+  }
+  .radio-baris input{position:absolute; opacity:0; width:0}
+  .radio-baris input:checked + span{font-weight:500}
+  .radio-baris label:has(input:checked){border-color:var(--ink); background:#f0eee9}
+  #splash{
+    position:fixed; inset:0; z-index:99; background:var(--paper);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:22px; transition:opacity .45s ease;
+  }
+  #splash.pergi{opacity:0; pointer-events:none}
+  #splash img{
+    width:min(46vw,180px); height:auto;
+    animation:muncul .7s cubic-bezier(.2,.7,.3,1) both;
+  }
+  #splash .nama{
+    font:500 20px/1.35 Georgia,"Times New Roman",serif; color:var(--ink);
+    text-align:center; letter-spacing:.3px; padding:0 24px;
+    animation:muncul .7s .16s cubic-bezier(.2,.7,.3,1) both;
+  }
+  #splash .sub-nama{
+    font-size:13px; color:var(--ink-soft); letter-spacing:.9px; text-transform:uppercase;
+    animation:muncul .7s .28s cubic-bezier(.2,.7,.3,1) both;
+  }
+  @keyframes muncul{from{opacity:0; transform:translateY(9px)} to{opacity:1; transform:none}}
+  @media (prefers-reduced-motion:reduce){
+    #splash img, #splash .nama, #splash .sub-nama{animation:none}
+    #splash{transition:none}
+  }
+
+  .kecil{font-size:14px; color:var(--ink-soft); text-align:center; margin-top:24px}
+  .sembunyi{display:none}
+  .tautan{display:block; text-align:center; margin-top:18px; color:var(--ink); font-size:15px}
+
+  .ajuan{border-top:1px solid var(--line); padding-top:18px; margin-top:18px}
+  .ajuan:first-of-type{border-top:0; padding-top:0; margin-top:0}
+  .ajuan-kepala{display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap}
+  .ajuan-judul{font-weight:500}
+  .ajuan-meta{font-size:13px; color:var(--ink-soft)}
+
+  .jalur{list-style:none; padding:0; margin:16px 0 0}
+  .jalur li{display:flex; gap:13px; padding-bottom:16px; position:relative}
+  .jalur li:not(:last-child)::before{
+    content:''; position:absolute; left:8px; top:20px; bottom:0; width:1px; background:var(--line);
+  }
+  .titik{
+    flex:none; width:17px; height:17px; border-radius:50%; margin-top:3px;
+    border:2px solid var(--line); background:#fff; z-index:1;
+  }
+  .t-selesai .titik{background:var(--ya); border-color:var(--ya)}
+  .t-aktif .titik{border-color:var(--ink); box-shadow:0 0 0 3px #dfe3ea}
+  .t-gagal .titik{background:var(--tidak); border-color:var(--tidak)}
+  .jalur-isi{flex:1; min-width:0}
+  .jalur-nama{font-size:15px}
+  .t-aktif .jalur-nama{font-weight:500}
+  .t-menunggu .jalur-nama{color:#9a9589}
+  .jalur-detail{font-size:13px; color:var(--ink-soft); margin-top:2px; word-wrap:break-word}
+  .t-gagal .jalur-detail{color:var(--tidak)}
+
+  .lampiran{border:1px dashed var(--line); border-radius:8px; padding:14px; margin-top:6px}
+  .lampiran-tombol{
+    display:block; width:100%; padding:13px; text-align:center; cursor:pointer;
+    border:1px solid var(--ink); border-radius:8px; font-weight:500; font-size:16px; background:#fff;
+  }
+  .lampiran-tombol:hover{background:#f0eee9}
+  .lampiran-tombol input{position:absolute; opacity:0; width:0; height:0}
+  .lampiran-atau{text-align:center; font-size:13px; color:var(--ink-soft); margin:12px 0}
+  .foto-daftar{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
+  .foto{position:relative; width:84px; height:84px; border-radius:8px; overflow:hidden; border:1px solid var(--line)}
+  .foto img{width:100%; height:100%; object-fit:cover; display:block}
+  .foto button{
+    position:absolute; top:3px; right:3px; width:24px; height:24px; margin:0; padding:0;
+    border-radius:50%; background:rgba(0,0,0,.62); color:#fff; font-size:15px; line-height:1;
+    border:0; cursor:pointer;
+  }
+  .foto-galat{border-color:var(--tidak)}
+  .foto-galat img{opacity:.35}
+</style>
+</head>
+<body>
+<div id="splash" role="status" aria-label="Memuat aplikasi">
+  <img src="data:image/png;base64,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" alt="Logo Gereja Bethel Indonesia">
+  <div class="nama">BJ GBI Danau Lau Kawar</div>
+  <div class="sub-nama">Persetujuan Pengeluaran Kas</div>
+</div>
+
+<header>
+  <h1>Persetujuan Pengeluaran Kas</h1>
+  <p id="header-sub">BJ GBI Danau Lau Kawar</p>
+</header>
+
+<main id="app">
+  <div class="card"><p class="sub" style="margin:0">Memuat…</p></div>
+</main>
+
+<script>
+const API = 'GANTI_DENGAN_URL_APPS_SCRIPT_EXEC';
+
+const app = document.getElementById('app');
+const params = new URLSearchParams(location.search);
+const token = params.get('t');
+
+const rp = n => 'Rp' + Number(n||0).toLocaleString('id-ID');
+const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+async function apiGet(qs){
+  const r = await fetch(API + '?' + qs);
+  return r.json();
+}
+async function apiPost(payload){
+  const r = await fetch(API, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(payload)
+  });
+  return r.json();
+}
+
+function pesan(teks, jenis='info'){
+  return `<div class="pesan ${jenis}">${esc(teks)}</div>`;
+}
+
+function ringkasan(p){
+  return `<dl>
+    <dt>Nomor</dt><dd>${esc(p.id)}</dd>
+    <dt>Pemohon</dt><dd>${esc(p.pemohon)}</dd>
+    <dt>Bidang</dt><dd>${esc(p.bidang)}</dd>
+    <dt>Uraian</dt><dd>${esc(p.uraian)}</dd>
+    <dt>Tujuan</dt><dd>${esc(p.tujuan)}</dd>
+    <dt>Nominal</dt><dd class="nominal">${rp(p.nominal)}</dd>
+  </dl>`;
+}
+
+// ---------- Halaman pengajuan ----------
+/** Susun kalimat kuorum dari aturan yang berlaku, bukan dari angka tetap. */
+function kalimatKuorum(nominal, a){
+  if(!a) return 'Kuorum penasehat mengikuti aturan yang berlaku.';
+  const orang = n => `${n} dari ${a.totalPenasehat} penasehat`;
+  if(nominal === null || nominal === 0)
+    return `Di atas ${rp(a.threshold)} memerlukan persetujuan ${orang(a.butuhDiAtas)}.`;
+  return nominal > a.threshold
+    ? `Nominal ini memerlukan persetujuan ${orang(a.butuhDiAtas)}.`
+    : `Nominal ini cukup disetujui ${orang(a.butuhDiBawah)}.`;
+}
+
+async function halamanPengajuan(){
+  const res = await apiGet('action=departemen');
+  const aturan = res.aturan;
+  const opsi = (res.data||[]).map(d =>
+    `<option value="${esc(d.email)}|${esc(d.bidang)}">${esc(d.nama)} — ${esc(d.bidang)}</option>`
+  ).join('');
+
+  app.innerHTML = `<div class="card">
+    <h2>Ajukan pengeluaran</h2>
+    <p class="sub">Formulir akan diteruskan ke Wakil Koordinator setelah dikirim.</p>
+    <div id="notif"></div>
+
+    <label for="pemohon">Nama pemohon</label>
+    <select id="pemohon"><option value="">— pilih nama —</option>${opsi}</select>
+
+    <label for="uraian">Barang, jasa, atau aset yang diajukan</label>
+    <textarea id="uraian" placeholder="Contoh: 2 unit mikrofon nirkabel untuk ruang ibadah"></textarea>
+
+    <label for="nominal">Nominal yang diajukan</label>
+    <input id="nominal" type="number" inputmode="numeric" placeholder="1500000">
+    <p class="hint" id="hint-kuorum">${esc(kalimatKuorum(null, aturan))}</p>
+
+    <label for="tujuan">Tujuan atau keperluan</label>
+    <textarea id="tujuan" placeholder="Contoh: Mengganti mikrofon lama yang sudah rusak"></textarea>
+
+    <label>Surat penawaran atau estimasi harga</label>
+    <div id="lamp-ajukan"></div>
+    <p class="hint">Wajib diisi. Foto langsung dengan kamera, atau tempelkan tautan Google Drive.</p>
+
+    <button class="b-utama" id="kirim">Kirim pengajuan</button>
+    <a class="tautan" href="?status=1">Lihat status pengajuan saya</a>
+  </div>`;
+
+  const lampiran = pasangLampiran('lamp-ajukan', 'penawaran', 'https://drive.google.com/...');
+
+  const nominal = document.getElementById('nominal');
+  nominal.addEventListener('input', () => {
+    const n = Number(nominal.value||0);
+    document.getElementById('hint-kuorum').textContent = kalimatKuorum(n, aturan);
+  });
+
+  document.getElementById('kirim').onclick = async (ev) => {
+    const sel = document.getElementById('pemohon');
+    const uraian = document.getElementById('uraian').value.trim();
+    const nom = Number(document.getElementById('nominal').value||0);
+    const tujuan = document.getElementById('tujuan').value.trim();
+
+    if(!sel.value || !uraian || !nom || !tujuan){
+      document.getElementById('notif').innerHTML = pesan('Lengkapi nama, uraian, nominal, dan tujuan sebelum mengirim.','galat');
+      return;
+    }
+    if(!lampiran.siap()){
+      document.getElementById('notif').innerHTML = pesan('Lampirkan foto penawaran, atau tempelkan tautannya.','galat');
+      return;
+    }
+    const [email, bidang] = sel.value.split('|');
+    ev.target.disabled = true;
+
+    let tautan;
+    try {
+      tautan = await lampiran.unggah(t => { ev.target.textContent = t; });
+    } catch(e) {
+      ev.target.disabled = false; ev.target.textContent = 'Kirim pengajuan';
+      document.getElementById('notif').innerHTML = pesan(e.message, 'galat');
+      return;
+    }
+
+    ev.target.textContent = 'Mengirim…';
+    const r = await apiPost({
+      action:'ajukan', nama: sel.selectedOptions[0].text.split(' — ')[0],
+      email, bidang, uraian, nominal: nom, tujuan, lampiran: tautan
+    });
+
+    app.innerHTML = r.ok
+      ? `<div class="card"><h2>Pengajuan terkirim</h2>
+         <p class="sub">Nomor formulir <strong>${esc(r.id)}</strong>. Wakil Koordinator sudah menerima email pemberitahuan.</p>
+         <button class="b-utama" onclick="location.href=location.pathname">Ajukan lagi</button>
+         <a class="tautan" href="?status=1">Pantau status pengajuan</a></div>`
+      : `<div class="card"><h2>Pengajuan gagal</h2>${pesan(r.error,'galat')}
+         <button class="b-utama" onclick="location.reload()">Coba lagi</button></div>`;
+  };
+}
+
+// ---------- Halaman approval (via token) ----------
+async function halamanTiket(){
+  const res = await apiGet('action=tiket&t=' + encodeURIComponent(token));
+  if(!res.ok){
+    app.innerHTML = `<div class="card"><h2>Link tidak berlaku</h2>${pesan(res.error,'galat')}</div>`;
+    return;
+  }
+  const p = res.pengajuan;
+
+  if(!res.sah){
+    const selesai = ['Selesai','Ditolak'].includes(p.status);
+    app.innerHTML = `<div class="card">
+      <h2>${selesai ? 'Sudah selesai diproses' : 'Tahap ini sudah diproses'}</h2>
+      <p class="sub">${selesai
+        ? `Status akhir: ${esc(p.status)}`
+        : `Pengajuan ini sudah melewati tahap Anda. Status sekarang: ${esc(p.status)}`}</p>
+      ${ringkasan(p)}
+      ${selesai ? '' : pesan('Tidak ada tindakan yang perlu Anda lakukan dari tautan ini.','info')}
+    </div>`;
+    return;
+  }
+
+  const render = {
+    wakil: () => formPutusan(p, 'Persetujuan Wakil Koordinator'),
+    koordinator: () => formPutusan(p, 'Persetujuan Koordinator'),
+    dana: () => formDana(p, res.aturan),
+    penasehat: () => formPenasehat(p, res, res.aturan),
+    pencairan: () => formPencairan(p),
+    lpj: () => formLPJ(p)
+  }[res.tahap];
+
+  if(!render){
+    app.innerHTML = `<div class="card"><h2>Tahap tidak dikenal</h2></div>`;
+    return;
+  }
+  render();
+}
+
+function tombolPutusan(onYa, onTidak, labelYa='Setujui', labelTidak='Tolak'){
+  document.getElementById('ya').onclick = onYa;
+  document.getElementById('tidak').onclick = onTidak;
+}
+
+function selesaiDengan(judul, teks){
+  app.innerHTML = `<div class="card"><h2>${esc(judul)}</h2><p class="sub">${esc(teks)}</p></div>`;
+}
+
+async function kirimAksi(payload, judul, teks, tombol){
+  tombol.disabled = true; tombol.textContent = 'Menyimpan…';
+  const r = await apiPost(payload);
+  if(r.ok) selesaiDengan(judul, teks);
+  else app.insertAdjacentHTML('afterbegin', pesan(r.error,'galat'));
+}
+
+function formPutusan(p, judul){
+  app.innerHTML = `<div class="card">
+    <h2>${esc(judul)}</h2>
+    <p class="sub">Tinjau pengajuan berikut, lalu beri keputusan.</p>
+    ${ringkasan(p)}
+    ${tampilLampiran(p.lampiran, 'penawaran')}
+    <label for="catatan">Catatan (opsional)</label>
+    <textarea id="catatan"></textarea>
+    <button class="b-ya" id="ya">Setujui, teruskan</button>
+    <button class="b-tidak" id="tidak">Tolak pengajuan</button>
+  </div>`;
+
+  const cat = () => document.getElementById('catatan').value.trim();
+  tombolPutusan(
+    e => kirimAksi({action:'putusan', token, setuju:true, catatan:cat()},
+      'Pengajuan disetujui','Tahap berikutnya sudah menerima pemberitahuan.', e.target),
+    e => kirimAksi({action:'putusan', token, setuju:false, catatan:cat()},
+      'Pengajuan ditolak','Pemohon sudah menerima pemberitahuan.', e.target)
+  );
+}
+
+function formDana(p, aturan){
+  app.innerHTML = `<div class="card">
+    <h2>Konfirmasi ketersediaan dana</h2>
+    <p class="sub">Isi saldo kas saat ini sebelum pengajuan diteruskan ke penasehat.</p>
+    ${ringkasan(p)}
+    <label for="saldo">Saldo kas saat ini</label>
+    <input id="saldo" type="number" inputmode="numeric" placeholder="5000000">
+
+    <label for="revisi">Revisi nominal (opsional)</label>
+    <input id="revisi" type="number" inputmode="numeric" placeholder="kosongkan jika tidak berubah">
+    <p class="hint">${aturan ? `Jika direvisi menjadi ${rp(aturan.threshold)} atau kurang, cukup ${aturan.butuhDiBawah} dari ${aturan.totalPenasehat} penasehat yang menyetujui.` : ''}</p>
+
+    <label for="catatan">Catatan</label>
+    <textarea id="catatan" placeholder="Wajib diisi jika dana tidak mencukupi"></textarea>
+
+    <button class="b-ya" id="ya">Dana tersedia, teruskan</button>
+    <button class="b-tidak" id="tidak">Dana tidak mencukupi</button>
+  </div>`;
+
+  const ambil = () => ({
+    saldo: Number(document.getElementById('saldo').value||0),
+    catatan: document.getElementById('catatan').value.trim(),
+    nominalRevisi: Number(document.getElementById('revisi').value||0) || null
+  });
+
+  tombolPutusan(
+    e => {
+      const d = ambil();
+      if(!d.saldo){ app.insertAdjacentHTML('afterbegin', pesan('Isi saldo kas terlebih dahulu.','galat')); return; }
+      kirimAksi({action:'dana', token, tersedia:true, ...d},
+        'Dana dikonfirmasi tersedia','Keempat penasehat sudah menerima pemberitahuan.', e.target);
+    },
+    e => {
+      const d = ambil();
+      if(!d.catatan){ app.insertAdjacentHTML('afterbegin', pesan('Isi catatan alasan dana tidak mencukupi.','galat')); return; }
+      kirimAksi({action:'dana', token, tersedia:false, ...d},
+        'Pengajuan ditunda','Pemohon sudah diberi tahu bahwa dana belum mencukupi.', e.target);
+    }
+  );
+}
+
+function formPenasehat(p, res, aturan){
+  const total = aturan ? aturan.totalPenasehat : 4;
+  const sudah = res.pengajuan.suaraSaya;
+  const belumKuorum = p.status === 'Belum Mencapai Kuorum';
+  app.innerHTML = `<div class="card">
+    <h2>Persetujuan penasehat</h2>
+    <p class="sub">Kuorum: butuh ${p.penasehatButuh} dari ${total} penasehat setuju.</p>
+    <p><span class="pill">${p.penasehatSetuju} dari ${p.penasehatButuh} suara setuju terkumpul</span></p>
+    ${belumKuorum ? pesan(`Semua ${total} penasehat sudah memberi suara, tetapi kuorum belum tercapai. Bicarakan bersama, lalu ubah keputusan bila perlu.`,'info') : ''}
+    ${sudah !== null ? pesan('Anda sudah memberi suara: ' + (sudah ? 'Setuju' : 'Tidak setuju') + '. Anda masih dapat mengubahnya.','info') : ''}
+    ${ringkasan(p)}
+    ${tampilLampiran(p.lampiran, 'penawaran')}
+    <label for="catatan">Catatan (opsional)</label>
+    <textarea id="catatan"></textarea>
+    <button class="b-ya" id="ya">Setuju</button>
+    <button class="b-tidak" id="tidak">Tidak setuju</button>
+  </div>`;
+
+  const cat = () => document.getElementById('catatan').value.trim();
+  const kirim = async (setuju, tombol) => {
+    tombol.disabled = true; tombol.textContent = 'Menyimpan…';
+    const r = await apiPost({action:'penasehat', token, setuju, catatan:cat()});
+    if(!r.ok){ app.insertAdjacentHTML('afterbegin', pesan(r.error,'galat')); return; }
+
+    const teks = r.status === 'Menunggu Pencairan Dana'
+      ? 'Kuorum tercapai. Bendahara sudah diminta mencairkan dana.'
+      : r.status === 'Belum Mencapai Kuorum'
+        ? `Terkumpul ${r.setuju} dari ${r.butuh} suara setuju. Semua penasehat sudah memilih, kuorum belum tercapai — bicarakan bersama, keputusan masih dapat diubah.`
+        : `Terkumpul ${r.setuju} dari ${r.butuh} suara setuju yang dibutuhkan.`;
+    selesaiDengan('Suara tercatat', teks);
+  };
+  tombolPutusan(e => kirim(true, e.target), e => kirim(false, e.target));
+}
+
+function formPencairan(p){
+  app.innerHTML = `<div class="card">
+    <h2>Catat pencairan dana</h2>
+    <p class="sub">Pengajuan sudah memenuhi kuorum penasehat.</p>
+    ${ringkasan(p)}
+    <label for="noBukti">Nomor bukti kas keluar</label>
+    <input id="noBukti" placeholder="BKK-2026-014">
+
+    <label for="jumlah">Jumlah dicairkan</label>
+    <input id="jumlah" type="number" inputmode="numeric" value="${Number(p.nominal)}">
+
+    <label>Metode pembayaran</label>
+    <div class="radio-baris">
+      <label><input type="radio" name="metode" value="Tunai" checked><span>Tunai</span></label>
+      <label><input type="radio" name="metode" value="Transfer Bank"><span>Transfer bank</span></label>
+    </div>
+
+    <label for="rekening">Nama dan nomor rekening penerima</label>
+    <input id="rekening" placeholder="diisi jika transfer">
+
+    <button class="b-utama" id="simpan">Catat pencairan</button>
+  </div>`;
+
+  document.getElementById('simpan').onclick = e => {
+    const noBukti = document.getElementById('noBukti').value.trim();
+    const jumlah = Number(document.getElementById('jumlah').value||0);
+    if(!noBukti || !jumlah){ app.insertAdjacentHTML('afterbegin', pesan('Isi nomor bukti kas dan jumlah dicairkan.','galat')); return; }
+    kirimAksi({
+      action:'pencairan', token, noBukti, jumlah,
+      metode: document.querySelector('input[name=metode]:checked').value,
+      rekening: document.getElementById('rekening').value.trim()
+    }, 'Pencairan tercatat', 'Pemohon sudah diminta mengirim pertanggungjawaban.', e.target);
+  };
+}
+
+function formLPJ(p){
+  app.innerHTML = `<div class="card">
+    <h2>Laporan pertanggungjawaban</h2>
+    <p class="sub">Dana yang dicairkan: ${rp(p.jumlahDicairkan)}</p>
+    ${ringkasan(p)}
+    <label for="tanggal">Tanggal realisasi</label>
+    <input id="tanggal" type="date">
+
+    <label for="uraianReal">Barang atau jasa yang benar-benar dibeli</label>
+    <textarea id="uraianReal"></textarea>
+
+    <label for="realisasi">Jumlah realisasi sebenarnya</label>
+    <input id="realisasi" type="number" inputmode="numeric" placeholder="1450000">
+    <p class="hint" id="hint-selisih">Selisih dihitung otomatis terhadap dana yang dicairkan.</p>
+
+    <label>Foto nota atau kwitansi</label>
+    <div id="lamp-nota"></div>
+    <p class="hint">Wajib diisi. Foto nota langsung dengan kamera ponsel, atau tempelkan tautan Drive.</p>
+
+    <button class="b-utama" id="simpan">Kirim pertanggungjawaban</button>
+  </div>`;
+
+  const nota = pasangLampiran('lamp-nota', 'nota', 'https://drive.google.com/...');
+  const real = document.getElementById('realisasi');
+  real.addEventListener('input', () => {
+    const s = Number(p.jumlahDicairkan) - Number(real.value||0);
+    document.getElementById('hint-selisih').textContent =
+      !real.value ? 'Selisih dihitung otomatis terhadap dana yang dicairkan.'
+      : s === 0 ? 'Sesuai, tidak ada selisih.'
+      : s > 0 ? `Sisa ${rp(s)} dikembalikan ke kas.`
+      : `Dana tambahan ${rp(Math.abs(s))} diperlukan.`;
+  });
+
+  document.getElementById('simpan').onclick = async e => {
+    const jumlahRealisasi = Number(real.value||0);
+    const uraianRealisasi = document.getElementById('uraianReal').value.trim();
+    if(!jumlahRealisasi || !uraianRealisasi){
+      app.insertAdjacentHTML('afterbegin', pesan('Isi uraian dan jumlah realisasi.','galat')); return;
+    }
+    if(!nota.siap()){
+      app.insertAdjacentHTML('afterbegin', pesan('Lampirkan foto nota, atau tempelkan tautannya.','galat')); return;
+    }
+    e.target.disabled = true;
+    let linkNota;
+    try {
+      linkNota = await nota.unggah(t => { e.target.textContent = t; });
+    } catch(err) {
+      e.target.disabled = false; e.target.textContent = 'Kirim pertanggungjawaban';
+      app.insertAdjacentHTML('afterbegin', pesan(err.message,'galat')); return;
+    }
+    kirimAksi({
+      action:'lpj', token, jumlahRealisasi, uraianRealisasi, linkNota,
+      tanggalRealisasi: document.getElementById('tanggal').value
+    }, 'Pertanggungjawaban terkirim', 'Bendahara sudah menerima laporan untuk diverifikasi.', e.target);
+  };
+}
+
+// ---------- Komponen lampiran foto ----------
+const MAKS_FOTO = 3;
+
+/** Kecilkan foto di ponsel sebelum dikirim, supaya unggahan tidak gagal. */
+async function kecilkanFoto(file, maks = 1600, mutu = 0.75){
+  let sumber;
+  try {
+    sumber = await createImageBitmap(file);
+  } catch {
+    sumber = await new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => res(img);
+      img.onerror = () => rej(new Error('Format gambar tidak didukung.'));
+      img.src = URL.createObjectURL(file);
+    });
+  }
+  const w = sumber.width, h = sumber.height;
+  const skala = Math.min(1, maks / Math.max(w, h));
+  const c = document.createElement('canvas');
+  c.width = Math.round(w * skala);
+  c.height = Math.round(h * skala);
+  c.getContext('2d').drawImage(sumber, 0, 0, c.width, c.height);
+
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', mutu));
+  if(!blob) throw new Error('Gagal memproses gambar.');
+  const b64 = await new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => res(String(fr.result).split(',')[1]);
+    fr.onerror = () => rej(new Error('Gagal membaca berkas.'));
+    fr.readAsDataURL(blob);
+  });
+  return { b64, pratinjau: c.toDataURL('image/jpeg', 0.5), ukuran: blob.size };
+}
+
+/**
+ * Pasang pemilih foto ke dalam elemen `#${id}`.
+ * Mengembalikan objek dengan .tautan() -> array URL, dan .siap() -> boolean.
+ */
+function pasangLampiran(id, konteks, labelTautan){
+  const wadah = document.getElementById(id);
+  wadah.innerHTML = `
+    <div class="lampiran">
+      <label class="lampiran-tombol">
+        Ambil foto atau pilih dari galeri
+        <input type="file" accept="image/*" capture="environment" multiple id="${id}-berkas">
+      </label>
+      <div class="foto-daftar" id="${id}-daftar"></div>
+      <div class="lampiran-atau">atau</div>
+      <input type="url" id="${id}-tautan" placeholder="${esc(labelTautan)}">
+    </div>`;
+
+  const foto = [];
+  const daftar = document.getElementById(`${id}-daftar`);
+  const input = document.getElementById(`${id}-berkas`);
+
+  function gambarUlang(){
+    daftar.innerHTML = foto.map((f, i) => `
+      <div class="foto ${f.galat ? 'foto-galat' : ''}">
+        <img src="${f.pratinjau}" alt="Lampiran ${i+1}">
+        <button type="button" aria-label="Hapus foto ${i+1}" data-i="${i}">×</button>
+      </div>`).join('');
+    daftar.querySelectorAll('button').forEach(b => {
+      b.onclick = () => { foto.splice(Number(b.dataset.i), 1); gambarUlang(); };
+    });
+    input.parentElement.style.display = foto.length >= MAKS_FOTO ? 'none' : '';
+  }
+
+  input.onchange = async () => {
+    const berkas = Array.from(input.files || []);
+    input.value = '';
+    for(const b of berkas){
+      if(foto.length >= MAKS_FOTO){
+        alert(`Maksimal ${MAKS_FOTO} foto.`);
+        break;
+      }
+      try {
+        const hasil = await kecilkanFoto(b);
+        foto.push({ ...hasil, galat: false });
+      } catch(e) {
+        alert('Foto tidak bisa diproses: ' + e.message);
+      }
+      gambarUlang();
+    }
+  };
+
+  return {
+    jumlahFoto: () => foto.length,
+    tautanManual: () => document.getElementById(`${id}-tautan`).value.trim(),
+    siap(){ return foto.length > 0 || this.tautanManual() !== ''; },
+    async unggah(lapor){
+      const url = [];
+      for(let i = 0; i < foto.length; i++){
+        lapor?.(`Mengunggah foto ${i+1} dari ${foto.length}…`);
+        const r = await apiPost({ action:'unggah', konteks, mime:'image/jpeg', data: foto[i].b64 });
+        if(!r.ok) throw new Error(r.error || 'Unggahan gagal.');
+        url.push(r.url);
+      }
+      const manual = this.tautanManual();
+      if(manual) url.push(manual);
+      return url;
+    }
+  };
+}
+
+/** Tampilkan satu atau beberapa tautan lampiran. */
+function tampilLampiran(gabungan, label){
+  const url = String(gabungan || '').split(',').map(s => s.trim()).filter(Boolean);
+  if(!url.length) return pesan(`Tidak ada ${label} yang dilampirkan.`, 'info');
+  return `<p>${url.map((u, i) =>
+    `<a href="${esc(u)}" target="_blank" rel="noopener">Lihat ${esc(label)}${url.length > 1 ? ' ' + (i+1) : ''}</a>`
+  ).join(' · ')}</p>`;
+}
+
+// ---------- Halaman status ----------
+const KUNCI_KODE = 'kode_akses_status';
+
+async function halamanStatus(){
+  const res = await apiGet('action=departemen');
+  const opsi = (res.data||[]).map(d =>
+    `<option value="${esc(d.email)}">${esc(d.nama)} — ${esc(d.bidang)}</option>`
+  ).join('');
+
+  app.innerHTML = `<div class="card">
+    <h2>Status pengajuan</h2>
+    <p class="sub">Lihat pengajuan Anda sedang menunggu siapa.</p>
+    <div id="notif"></div>
+
+    <label for="siapa">Nama pemohon</label>
+    <select id="siapa"><option value="">— pilih nama —</option>${opsi}</select>
+
+    <label for="kode">Kode akses</label>
+    <input id="kode" type="password" autocomplete="current-password">
+    <p class="hint">Kode dibagikan oleh sekretariat gereja.</p>
+
+    <button class="b-utama" id="lihat">Lihat status</button>
+    <a class="tautan" href="${location.pathname}">Kembali ke formulir pengajuan</a>
+  </div>
+  <div id="hasil"></div>`;
+
+  const simpan = sessionStorage.getItem(KUNCI_KODE);
+  if(simpan) document.getElementById('kode').value = simpan;
+
+  document.getElementById('lihat').onclick = async (ev) => {
+    const email = document.getElementById('siapa').value;
+    const kode = document.getElementById('kode').value.trim();
+    if(!email || !kode){
+      document.getElementById('notif').innerHTML = pesan('Pilih nama dan isi kode akses.','galat');
+      return;
+    }
+    ev.target.disabled = true; ev.target.textContent = 'Memuat…';
+    const r = await apiGet(`action=status&email=${encodeURIComponent(email)}&kode=${encodeURIComponent(kode)}`);
+    ev.target.disabled = false; ev.target.textContent = 'Lihat status';
+
+    if(!r.ok){
+      document.getElementById('notif').innerHTML = pesan(r.error,'galat');
+      document.getElementById('hasil').innerHTML = '';
+      return;
+    }
+    sessionStorage.setItem(KUNCI_KODE, kode);
+    document.getElementById('notif').innerHTML = '';
+    document.getElementById('hasil').innerHTML = r.data.length
+      ? `<div class="card">${r.data.map(kartuAjuan).join('')}</div>`
+      : `<div class="card"><p class="sub" style="margin:0">Belum ada pengajuan atas nama ini.</p></div>`;
+  };
+}
+
+function kartuAjuan(a){
+  const langkah = a.tahapan.map(t => `
+    <li class="t-${t.keadaan}">
+      <span class="titik"></span>
+      <div class="jalur-isi">
+        <div class="jalur-nama">${esc(t.nama)}${t.tanggal ? ` · <span class="ajuan-meta">${esc(t.tanggal)}</span>` : ''}</div>
+        ${t.detail ? `<div class="jalur-detail">${esc(t.detail)}</div>` : ''}
+      </div>
+    </li>`).join('');
+
+  return `<div class="ajuan">
+    <div class="ajuan-kepala">
+      <span class="ajuan-judul">${esc(a.uraian)}</span>
+      <span class="ajuan-meta">${esc(a.id)} · ${esc(a.tanggal)}</span>
+    </div>
+    <p style="margin:6px 0 0"><span class="pill">${esc(a.status)}</span> <strong>${rp(a.nominal)}</strong></p>
+    <ul class="jalur">${langkah}</ul>
+  </div>`;
+}
+
+// ---------- Mulai ----------
+const MULAI = Date.now();
+const TAMPIL_SPLASH_MIN = 900; // ms, supaya logo tidak berkedip sekilas
+
+function tutupSplash(){
+  const sisa = Math.max(0, TAMPIL_SPLASH_MIN - (Date.now() - MULAI));
+  setTimeout(() => {
+    const el = document.getElementById('splash');
+    if(!el) return;
+    el.classList.add('pergi');
+    el.addEventListener('transitionend', () => el.remove(), { once: true });
+    setTimeout(() => el.remove(), 700); // jaring pengaman bila transisi tidak berjalan
+  }, sisa);
+}
+
+const rute = params.has('status') ? halamanStatus : (token ? halamanTiket : halamanPengajuan);
+rute()
+  .catch(() => {
+    app.innerHTML = `<div class="card"><h2>Tidak dapat terhubung</h2>
+      ${pesan('Periksa koneksi internet, lalu muat ulang halaman.','galat')}</div>`;
+  })
+  .finally(tutupSplash);
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
