@@ -124,9 +124,10 @@
   .t-gagal .jalur-detail{color:var(--tidak)}
 
   .lampiran{border:1px dashed var(--line); border-radius:8px; padding:14px; margin-top:6px}
+  .lampiran-baris{display:flex; gap:10px}
   .lampiran-tombol{
-    display:block; width:100%; padding:13px; text-align:center; cursor:pointer;
-    border:1px solid var(--ink); border-radius:8px; font-weight:500; font-size:16px; background:#fff;
+    flex:1; display:block; padding:13px 8px; text-align:center; cursor:pointer;
+    border:1px solid var(--ink); border-radius:8px; font-weight:500; font-size:15px; background:#fff;
   }
   .lampiran-tombol:hover{background:#f0eee9}
   .lampiran-tombol input{position:absolute; opacity:0; width:0; height:0}
@@ -576,10 +577,16 @@ function pasangLampiran(id, konteks, labelTautan){
   const wadah = document.getElementById(id);
   wadah.innerHTML = `
     <div class="lampiran">
-      <label class="lampiran-tombol">
-        Ambil foto atau pilih dari galeri
-        <input type="file" accept="image/*" capture="environment" multiple id="${id}-berkas">
-      </label>
+      <div class="lampiran-baris">
+        <label class="lampiran-tombol">
+          📷 Ambil Foto
+          <input type="file" accept="image/*" capture="environment" id="${id}-kamera">
+        </label>
+        <label class="lampiran-tombol">
+          🖼️ Pilih dari Galeri
+          <input type="file" accept="image/*" multiple id="${id}-galeri">
+        </label>
+      </div>
       <div class="foto-daftar" id="${id}-daftar"></div>
       <div class="lampiran-atau">atau</div>
       <input type="url" id="${id}-tautan" placeholder="${esc(labelTautan)}">
@@ -587,7 +594,8 @@ function pasangLampiran(id, konteks, labelTautan){
 
   const foto = [];
   const daftar = document.getElementById(`${id}-daftar`);
-  const input = document.getElementById(`${id}-berkas`);
+  const inputKamera = document.getElementById(`${id}-kamera`);
+  const inputGaleri = document.getElementById(`${id}-galeri`);
 
   function gambarUlang(){
     daftar.innerHTML = foto.map((f, i) => `
@@ -598,10 +606,12 @@ function pasangLampiran(id, konteks, labelTautan){
     daftar.querySelectorAll('button').forEach(b => {
       b.onclick = () => { foto.splice(Number(b.dataset.i), 1); gambarUlang(); };
     });
-    input.parentElement.style.display = foto.length >= MAKS_FOTO ? 'none' : '';
+    const penuh = foto.length >= MAKS_FOTO;
+    inputKamera.closest('.lampiran-tombol').style.display = penuh ? 'none' : '';
+    inputGaleri.closest('.lampiran-tombol').style.display = penuh ? 'none' : '';
   }
 
-  input.onchange = async () => {
+  async function tambahBerkas(input){
     const berkas = Array.from(input.files || []);
     input.value = '';
     for(const b of berkas){
@@ -617,7 +627,9 @@ function pasangLampiran(id, konteks, labelTautan){
       }
       gambarUlang();
     }
-  };
+  }
+  inputKamera.onchange = () => tambahBerkas(inputKamera);
+  inputGaleri.onchange = () => tambahBerkas(inputGaleri);
 
   return {
     jumlahFoto: () => foto.length,
